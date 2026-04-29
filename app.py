@@ -9,10 +9,8 @@ def get_m3u8(url):
     YT_DLP_PATH = "yt-dlp"
     PROXY_URL = "http://other.siatube.com:3007"
     
-    # 必要な情報（m3u8 URL）だけを直接抽出するコマンド
     command = [
         YT_DLP_PATH,
-        "--js-runtimes", "node",
         "--proxy", PROXY_URL,
         "--skip-download",
         "--no-check-certificate",
@@ -20,7 +18,8 @@ def get_m3u8(url):
         "--no-check-formats",
         "--no-cache-dir",
         "--no-playlist",
-        "--extractor-args", "youtube:player_client=web_embedded",
+        "--ignore-config",
+        "--extractor-args", "youtube:player_client=mweb,ios;skip=dash,hls",
         "--print", "%(formats.:.url)s",
         url
     ]
@@ -32,25 +31,24 @@ def get_m3u8(url):
             stderr=subprocess.PIPE,
             text=True,
             encoding='utf-8',
-            timeout=28
+            timeout=25
         )
 
         if result.returncode != 0:
             return {"error": "yt-dlp failed", "stderr": result.stderr}, 500
 
-        # 出力された全URLの中からm3u8を含むものをフィルタリング
-        all_output_urls = result.stdout.strip().split('\n')
-        m3u8_urls = [u for u in all_output_urls if 'index.m3u8' in u or '/hls_playlist/' in u]
+        all_urls = result.stdout.strip().split('\n')
+        m3u8_urls = [u for u in all_urls if 'index.m3u8' in u or '/hls_playlist/' in u]
 
         if not m3u8_urls:
-            return {"error": "m3u8 not found", "all_urls_count": len(all_output_urls)}, 404
+            return {"error": "m3u8 not found", "count": len(all_urls)}, 404
 
         return {
-            "m3u8_urls": list(set(m3u8_urls)) # 重複排除
+            "m3u8_urls": list(set(m3u8_urls))
         }, 200
 
     except subprocess.TimeoutExpired:
-        return {"error": "Extreme Timeout (28s)"}, 504
+        return {"error": "Internal Timeout"}, 504
     except Exception as e:
         return {"error": str(e)}, 500
 
