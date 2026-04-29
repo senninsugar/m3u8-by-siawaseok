@@ -1,0 +1,11 @@
+{
+  "name": "ytdlp-m3u8-api",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "postinstall": "curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp && chmod +x yt-dlp"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
