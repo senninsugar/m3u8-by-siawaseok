@@ -22,7 +22,7 @@ def get_m3u8(url):
         "--no-progress",
         "--youtube-include-hls-manifest",
         "--no-check-certificate",
-        "--format", "all",
+        "-f", "hls-fastly/hls-akamai/hls/bestvideo+bestaudio/best",
         url
     ]
 
@@ -32,11 +32,15 @@ def get_m3u8(url):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            encoding='utf-8'
+            encoding='utf-8',
+            timeout=60
         )
 
         if result.returncode != 0:
-            return {"error": "yt-dlp failed", "stderr": result.stderr}, 500
+            return {"error": "yt-dlp execution failed", "stderr": result.stderr}, 500
+
+        if not result.stdout or not result.stdout.strip():
+            return {"error": "No output from yt-dlp", "stderr": result.stderr}, 500
 
         data = json.loads(result.stdout)
         formats = data.get("formats", [])
@@ -47,20 +51,18 @@ def get_m3u8(url):
             f_url = f.get('url', '')
             protocol = f.get('protocol', '')
             
-            if 'm3u8' in protocol or 'hls' in protocol or 'manifest' in f_url:
+            if 'm3u8' in protocol or 'hls' in protocol or 'manifest' in f_url or '.m3u8' in f_url:
                 m3u8_urls.append({
                     "format_id": f.get("format_id"),
                     "resolution": f.get("resolution"),
                     "url": f_url,
                     "protocol": protocol,
-                    "ext": f.get("ext"),
-                    "vcodec": f.get("vcodec"),
-                    "acodec": f.get("acodec")
+                    "ext": f.get("ext")
                 })
 
         if not m3u8_urls:
             hls_manifest_url = data.get('url')
-            if hls_manifest_url and 'manifest' in hls_manifest_url:
+            if hls_manifest_url and ('manifest' in hls_manifest_url or '.m3u8' in hls_manifest_url):
                 m3u8_urls.append({
                     "format_id": "direct_manifest",
                     "url": hls_manifest_url
@@ -71,6 +73,10 @@ def get_m3u8(url):
             "m3u8_urls": m3u8_urls
         }, 200
 
+    except subprocess.TimeoutExpired:
+        return {"error": "yt-dlp timed out"}, 504
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse yt-dlp output", "raw": result.stdout[:500]}, 500
     except Exception as e:
         return {"error": str(e)}, 500
 
