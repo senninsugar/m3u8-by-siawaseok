@@ -4,7 +4,7 @@ import { execFile } from "child_process";
 const app = express();
 
 const YT_DLP_PATH = "./yt-dlp";
-const PROXY = "http://other.siatube.com:3007";
+const PROXY = "http://ytproxy-siawaseok.duckdns.org:3007";
 
 // yt-dlp実行
 function getM3U8(url) {
