@@ -6,7 +6,6 @@ const app = express();
 const YT_DLP_PATH = "./yt-dlp";
 const PROXY = "http://ytproxy-siawaseok.duckdns.org:3007";
 
-// yt-dlp実行
 function getM3U8(url) {
   return new Promise((resolve, reject) => {
     execFile(
@@ -36,7 +35,6 @@ function getM3U8(url) {
           const data = JSON.parse(stdout);
           const formatsRaw = data.formats || [];
 
-          // 画質、フォーマット、itag(format_id)を含めて抽出
           const formats = formatsRaw
             .filter(f => f.url && f.url.includes(".m3u8"))
             .map(f => ({
@@ -68,7 +66,6 @@ function getM3U8(url) {
   });
 }
 
-// API
 app.get("/extract", async (req, res) => {
   let video_url = req.query.url;
 
@@ -78,7 +75,6 @@ app.get("/extract", async (req, res) => {
     });
   }
 
-  // 動画ID(11桁かつURL形式でない)の場合、YouTubeのURLに変換
   if (!video_url.includes("://") && video_url.length === 11) {
     video_url = `https://www.youtube.com/watch?v=${video_url}`;
   }
@@ -90,10 +86,8 @@ app.get("/extract", async (req, res) => {
     return res.status(500).json(e);
   }
 });
-
-// health check
 app.get("/", (req, res) => {
-  res.json({ status: "ok" });
+  res.json({ status: "ok" "this api make by sennin and siawaseok"});
 });
 
 const PORT = process.env.PORT || 8000;
